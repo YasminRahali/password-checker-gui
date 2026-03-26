@@ -36,3 +36,7 @@ Real-time strength meter (updates while typing)
 Password suggestions based on missing requirements
 More comprehensive common password database
 Export reports for multiple password checks
+
+Author
+
+Yasmin Rahali – aspiring cybersecurity enthusiast
