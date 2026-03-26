@@ -1,0 +1,101 @@
+import math
+import tkinter as tk
+
+# Weak passwords (no external file needed)
+weak_passwords = [
+    "Password1!", "P@ssword123", "Welcome1!", "Qwerty123",
+    "Abc12345.", "Admin123", "Letmein1", "Football1",
+    "Monkey*123", "Dragon<123", "Sunshine.1", "Princess1",
+    "1q!2w@3e#4r$", "1Qaz2wsx", "Iloveyou<3", "Login_123",
+    "Guest_123", "Test)1234"
+]
+
+special_chars = "!@#$%^&*().></_-"
+
+# Calculate password entropy
+def calculate_entropy(password):
+    charset_size = 0
+    if any(c.islower() for c in password):
+        charset_size += 26
+    if any(c.isupper() for c in password):
+        charset_size += 26
+    if any(c.isdigit() for c in password):
+        charset_size += 10
+    if any(c in special_chars for c in password):
+        charset_size += len(special_chars)
+    if charset_size == 0:
+        return 0
+    return round(len(password) * math.log2(charset_size), 2)
+
+# Generate missing requirements suggestions
+def password_suggestions(password):
+    missing = []
+    if len(password) < 8:
+        missing.append("at least 8 characters")
+    if not any(c.isupper() for c in password):
+        missing.append("uppercase letter")
+    if not any(c.islower() for c in password):
+        missing.append("lowercase letter")
+    if not any(c.isdigit() for c in password):
+        missing.append("number")
+    if not any(c in special_chars for c in password):
+        missing.append(f"special character ({special_chars})")
+    return missing
+
+# Check password strength
+def check_password():
+    password = entry.get()
+
+    # Check common passwords first
+    if password in weak_passwords:
+        result_label.config(text="Weak ❌ - Commonly used password", fg="red")
+        return
+
+    # Score calculation
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_number = any(c.isdigit() for c in password)
+    has_special = any(c in special_chars for c in password)
+    length_ok = len(password) >= 8
+
+    score = sum([length_ok, has_upper, has_lower, has_number, has_special])
+
+    # Determine strength based on score
+    if score <= 2:
+        strength = "Weak ❌"
+        color = "red"
+    elif score <= 4:
+        strength = "Medium ⚠️"
+        color = "orange"
+    else:
+        strength = "Strong ✅"
+        color = "green"
+
+    # Missing requirements suggestions
+    missing = password_suggestions(password)
+
+    # Calculate entropy
+    entropy = calculate_entropy(password)
+
+    # Build final feedback
+    feedback = f"{strength}\nEntropy: {entropy} bits"
+    if missing:
+        feedback += "\nMissing: " + ", ".join(missing)
+
+    result_label.config(text=feedback, fg=color)
+
+# Create GUI window
+root = tk.Tk()
+root.title("Password Strength Checker")
+root.geometry("400x220")  # width x height
+
+tk.Label(root, text="Enter your password:", font=("Arial", 12)).pack(pady=5)
+entry = tk.Entry(root, show="*", width=30, font=("Arial", 12))
+entry.pack(pady=5)
+
+tk.Button(root, text="Check Password", command=check_password, font=("Arial", 12)).pack(pady=10)
+
+result_label = tk.Label(root, text="", font=("Arial", 12))
+result_label.pack(pady=5)
+
+root.mainloop()
