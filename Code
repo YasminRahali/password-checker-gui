@@ -1,103 +1,97 @@
 The following code is executable on Python 3.9+ or Pycharm 
 
-import math
+import time
+import itertools
+import string
 import tkinter as tk
 
-# Weak passwords (no external file needed)
-weak_passwords = [
-    "Password1!", "P@ssword123", "Welcome1!", "Qwerty123",
-    "Abc12345.", "Admin123", "Letmein1", "Football1",
-    "Monkey*123", "Dragon<123", "Sunshine.1", "Princess1",
-    "1q!2w@3e#4r$", "1Qaz2wsx", "Iloveyou<3", "Login_123",
-    "Guest_123", "Test)1234"
+# Dictionary
+common_passwords = [
+    "123456", "password", "12345678", "qwerty",
+    "abc123", "password123", "admin", "letmein",
+    "welcome", "monkey", "football", "iloveyou",
+    "Test123", "Hello123"
 ]
 
-special_chars = "!@#$%^&*().></_-"
+def crack_password():
+    target_password = entry.get()
+    result_label.config(text="Starting attack...", fg="blue")
+    attempts_label.config(text="Attempts: 0")
+    root.update()
 
-# Calculate password entropy
-def calculate_entropy(password):
-    charset_size = 0
-    if any(c.islower() for c in password):
-        charset_size += 26
-    if any(c.isupper() for c in password):
-        charset_size += 26
-    if any(c.isdigit() for c in password):
-        charset_size += 10
-    if any(c in special_chars for c in password):
-        charset_size += len(special_chars)
-    if charset_size == 0:
-        return 0
-    return round(len(password) * math.log2(charset_size), 2)
+    start_time = time.time()
+    attempt_count = 0
 
-# Generate missing requirements suggestions
-def password_suggestions(password):
-    missing = []
-    if len(password) < 8:
-        missing.append("at least 8 characters")
-    if not any(c.isupper() for c in password):
-        missing.append("uppercase letter")
-    if not any(c.islower() for c in password):
-        missing.append("lowercase letter")
-    if not any(c.isdigit() for c in password):
-        missing.append("number")
-    if not any(c in special_chars for c in password):
-        missing.append(f"special character ({special_chars})")
-    return missing
+    # -------- Dictionary Attack --------
+    status_label.config(text="🔍 Dictionary Attack...")
+    root.update()
 
-# Check password strength
-def check_password():
-    password = entry.get()
+    for password in common_passwords:
+        attempt_count += 1
 
-    # Check common passwords first
-    if password in weak_passwords:
-        result_label.config(text="Weak ❌ - Commonly used password", fg="red")
-        return
+        if attempt_count % 2 == 0:
+            attempts_label.config(text=f"Attempts: {attempt_count}")
+            root.update()
 
-    # Score calculation
-    has_upper = any(c.isupper() for c in password)
-    has_lower = any(c.islower() for c in password)
-    has_number = any(c.isdigit() for c in password)
-    has_special = any(c in special_chars for c in password)
-    length_ok = len(password) >= 8
+        if password == target_password:
+            end_time = time.time()
+            result_label.config(
+                text=f"✅ Cracked!\nPassword: {password}\nMethod: Dictionary\nTime: {round(end_time - start_time, 4)}s",
+                fg="green"
+            )
+            return
 
-    score = sum([length_ok, has_upper, has_lower, has_number, has_special])
+    # -------- Brute Force Attack --------
+    status_label.config(text="⚡ Brute Force Attack...")
+    root.update()
 
-    # Determine strength based on score
-    if score <= 2:
-        strength = "Weak ❌"
-        color = "red"
-    elif score <= 4:
-        strength = "Medium ⚠️"
-        color = "orange"
-    else:
-        strength = "Strong ✅"
-        color = "green"
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + "!@#$%_.()"
+    max_length = 3
 
-    # Missing requirements suggestions
-    missing = password_suggestions(password)
+    for length in range(1, max_length + 1):
+        status_label.config(text=f"⚡ Brute Force (length {length})")
+        root.update()
 
-    # Calculate entropy
-    entropy = calculate_entropy(password)
+        for guess in itertools.product(chars, repeat=length):
+            attempt = ''.join(guess)
+            attempt_count += 1
 
-    # Build final feedback
-    feedback = f"{strength}\nEntropy: {entropy} bits"
-    if missing:
-        feedback += "\nMissing: " + ", ".join(missing)
+            # Update GUI every 500 attempts
+            if attempt_count % 500 == 0:
+                attempts_label.config(text=f"Attempts: {attempt_count}")
+                result_label.config(text=f"Trying: {attempt}", fg="orange")
+                root.update()
 
-    result_label.config(text=feedback, fg=color)
+            if attempt == target_password:
+                end_time = time.time()
+                result_label.config(
+                    text=f"✅ Cracked!\nPassword: {attempt}\nMethod: Brute Force\nTime: {round(end_time - start_time, 4)}s",
+                    fg="green"
+                )
+                return
 
-# Create GUI window
+    result_label.config(text="❌ Not cracked", fg="red")
+
+
+# -------- GUI --------
 root = tk.Tk()
-root.title("Password Strength Checker")
-root.geometry("400x220")  # width x height
+root.title("Cybersecurity Password Cracker Simulator")
+root.geometry("450x300")
 
-tk.Label(root, text="Enter your password:", font=("Arial", 12)).pack(pady=5)
+tk.Label(root, text="Enter password to crack:", font=("Arial", 12)).pack(pady=5)
+
 entry = tk.Entry(root, show="*", width=30, font=("Arial", 12))
 entry.pack(pady=5)
 
-tk.Button(root, text="Check Password", command=check_password, font=("Arial", 12)).pack(pady=10)
+tk.Button(root, text="Start Attack", command=crack_password, font=("Arial", 12)).pack(pady=10)
+
+status_label = tk.Label(root, text="", font=("Arial", 10))
+status_label.pack()
+
+attempts_label = tk.Label(root, text="Attempts: 0", font=("Arial", 10))
+attempts_label.pack()
 
 result_label = tk.Label(root, text="", font=("Arial", 12))
-result_label.pack(pady=5)
+result_label.pack(pady=10)
 
 root.mainloop()
